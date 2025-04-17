@@ -1,0 +1,28 @@
+# Informasi Akun Dummy Aplikasi LogiTech
+
+## Akun Admin
+Username: anam
+Password: Anam490468
+
+## Akun Driver
+Username: driver1
+Password: Driver123
+(kemungkinan tidak berfungsi)
+
+Username: driver2
+Password: Driver123
+(kemungkinan tidak berfungsi)
+
+Username: driver3
+Password: Driver123
+(kemungkinan tidak berfungsi)
+
+Username: driver6    <-- GUNAKAN INI (BERFUNGSI)
+Password: Driver123
+
+## Akun User
+Username: pembeli1
+Password: Pembeli123
+
+Username: pembeli2
+Password: Pembeli123
