@@ -1,0 +1,124 @@
+0|logitech  | file:///var/www/logitech/node_modules/@neondatabase/serverless/index.mjs:1345
+0|logitech  | o?t(o):n(u)},"cb"),s=new r(function(o,u){n=o,t=u}).catch(o=>{throw Error.captureStackTrace(
+0|logitech  |                                                                          ^
+0|logitech  | ErrorEvent {
+0|logitech  |   [Symbol(kTarget)]: WebSocket {
+0|logitech  |     _events: [Object: null prototype] {
+0|logitech  |       error: [Function: onError] {
+0|logitech  |         [Symbol(kIsForOnEventAttribute)]: false,
+0|logitech  |         [Symbol(kListener)]: [Function (anonymous)]
+0|logitech  |       },
+0|logitech  |       message: [Function: onMessage] {
+0|logitech  |         [Symbol(kIsForOnEventAttribute)]: false,
+0|logitech  |         [Symbol(kListener)]: [Function (anonymous)]
+0|logitech  |       },
+0|logitech  |       close: [Function: onClose] {
+0|logitech  |         [Symbol(kIsForOnEventAttribute)]: false,
+0|logitech  |         [Symbol(kListener)]: [Function (anonymous)]
+0|logitech  |       },
+0|logitech  |       open: [Function: onOpen] {
+0|logitech  |         [Symbol(kIsForOnEventAttribute)]: false,
+0|logitech  |         [Symbol(kListener)]: [Function: handleWebSocketOpen]
+0|logitech  |       }
+0|logitech  |     },
+0|logitech  |     _eventsCount: 4,
+0|logitech  |     _maxListeners: undefined,
+0|logitech  |     _binaryType: 'arraybuffer',
+0|logitech  |     _closeCode: 1006,
+0|logitech  |     _closeFrameReceived: false,
+0|logitech  |     _closeFrameSent: false,
+0|logitech  |     _closeMessage: Buffer(0) [Uint8Array] [],
+0|logitech  |     _closeTimer: null,
+0|logitech  |     _errorEmitted: true,
+0|logitech  |     _extensions: {},
+0|logitech  |     _paused: false,
+0|logitech  |     _protocol: '',
+0|logitech  |     _readyState: 3,
+0|logitech  |     _receiver: null,
+0|logitech  |     _sender: null,
+0|logitech  |     _socket: null,
+0|logitech  |     _bufferedAmount: 0,
+0|logitech  |     _isServer: false,
+0|logitech  |     _redirects: 0,
+0|logitech  |     _autoPong: true,
+0|logitech  |     _url: 'wss://localhost/v2',
+0|logitech  |     _req: null,
+0|logitech  |     [Symbol(shapeMode)]: false,
+0|logitech  |     [Symbol(kCapture)]: false
+0|logitech  |   },
+0|logitech  |   [Symbol(kType)]: 'error',
+0|logitech  |   [Symbol(kError)]: Error: connect ECONNREFUSED 127.0.0.1:443
+0|logitech  |       at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16) {
+0|logitech  |     errno: -111,
+0|logitech  |     code: 'ECONNREFUSED',
+0|logitech  |     syscall: 'connect',
+0|logitech  |     address: '127.0.0.1',
+0|logitech  |     port: 443
+0|logitech  |   },
+0|logitech  |   [Symbol(kMessage)]: 'connect ECONNREFUSED 127.0.0.1:443'
+0|logitech  | }
+0|logitech  | Node.js v20.19.0
+0|logitech  | > rest-express@1.0.0 start
+0|logitech  | > node -r dotenv/config dist/index.js
+0|logitech  | file:///var/www/logitech/node_modules/@neondatabase/serverless/index.mjs:1345
+0|logitech  | o?t(o):n(u)},"cb"),s=new r(function(o,u){n=o,t=u}).catch(o=>{throw Error.captureStackTrace(
+0|logitech  |                                                                          ^
+0|logitech  | ErrorEvent {
+0|logitech  |   [Symbol(kTarget)]: WebSocket {
+0|logitech  |     _events: [Object: null prototype] {
+0|logitech  |       error: [Function: onError] {
+0|logitech  |         [Symbol(kIsForOnEventAttribute)]: false,
+0|logitech  |         [Symbol(kListener)]: [Function (anonymous)]
+0|logitech  |       },
+0|logitech  |       message: [Function: onMessage] {
+0|logitech  |         [Symbol(kIsForOnEventAttribute)]: false,
+0|logitech  |         [Symbol(kListener)]: [Function (anonymous)]
+0|logitech  |       },
+0|logitech  |       close: [Function: onClose] {
+0|logitech  |         [Symbol(kIsForOnEventAttribute)]: false,
+0|logitech  |         [Symbol(kListener)]: [Function (anonymous)]
+0|logitech  |       },
+0|logitech  |       open: [Function: onOpen] {
+0|logitech  |         [Symbol(kIsForOnEventAttribute)]: false,
+0|logitech  |         [Symbol(kListener)]: [Function: handleWebSocketOpen]
+0|logitech  |       }
+0|logitech  |     },
+0|logitech  |     _eventsCount: 4,
+0|logitech  |     _maxListeners: undefined,
+0|logitech  |     _binaryType: 'arraybuffer',
+0|logitech  |     _closeCode: 1006,
+0|logitech  |     _closeFrameReceived: false,
+0|logitech  |     _closeFrameSent: false,
+0|logitech  |     _closeMessage: Buffer(0) [Uint8Array] [],
+0|logitech  |     _closeTimer: null,
+0|logitech  |     _errorEmitted: true,
+0|logitech  |     _extensions: {},
+0|logitech  |     _paused: false,
+0|logitech  |     _protocol: '',
+0|logitech  |     _readyState: 3,
+0|logitech  |     _receiver: null,
+0|logitech  |     _sender: null,
+0|logitech  |     _socket: null,
+0|logitech  |     _bufferedAmount: 0,
+0|logitech  |     _isServer: false,
+0|logitech  |     _redirects: 0,
+0|logitech  |     _autoPong: true,
+0|logitech  |     _url: 'wss://localhost/v2',
+0|logitech  |     _req: null,
+0|logitech  |     [Symbol(shapeMode)]: false,
+0|logitech  |     [Symbol(kCapture)]: false
+0|logitech  |   },
+0|logitech  |   [Symbol(kType)]: 'error',
+0|logitech  |   [Symbol(kError)]: Error: connect ECONNREFUSED 127.0.0.1:443
+0|logitech  |       at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16) {
+0|logitech  |     errno: -111,
+0|logitech  |     code: 'ECONNREFUSED',
+0|logitech  |     syscall: 'connect',
+0|logitech  |     address: '127.0.0.1',
+0|logitech  |     port: 443
+0|logitech  |   },
+0|logitech  |   [Symbol(kMessage)]: 'connect ECONNREFUSED 127.0.0.1:443'
+0|logitech  | }
+0|logitech  | Node.js v20.19.0
+0|logitech  | > rest-express@1.0.0 start
+0|logitech  | > node -r dotenv/config dist/index.js

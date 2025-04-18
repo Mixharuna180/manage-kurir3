@@ -1,0 +1,1721 @@
+var __defProp = Object.defineProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+
+// server/index.ts
+import express2 from "express";
+
+// server/routes.ts
+import { createServer } from "http";
+
+// shared/schema.ts
+var schema_exports = {};
+__export(schema_exports, {
+  insertOrderSchema: () => insertOrderSchema,
+  insertProductSchema: () => insertProductSchema,
+  insertTrackingEventSchema: () => insertTrackingEventSchema,
+  insertUserSchema: () => insertUserSchema,
+  insertWarehouseSchema: () => insertWarehouseSchema,
+  orders: () => orders,
+  productFormSchema: () => productFormSchema,
+  products: () => products,
+  purchaseFormSchema: () => purchaseFormSchema,
+  trackingEvents: () => trackingEvents,
+  userRegisterSchema: () => userRegisterSchema,
+  users: () => users,
+  warehouses: () => warehouses
+});
+import { pgTable, text, serial, integer, timestamp, real, varchar } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
+var users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
+  email: text("email").notNull(),
+  fullName: text("full_name").notNull(),
+  phoneNumber: text("phone_number"),
+  address: text("address"),
+  city: text("city"),
+  postalCode: text("postal_code"),
+  userType: text("user_type").notNull().default("user"),
+  // user, driver, or admin
+  serviceArea: text("service_area"),
+  // untuk driver: area layanan (kecamatan)
+  createdAt: timestamp("created_at").defaultNow()
+});
+var insertUserSchema = createInsertSchema(users).pick({
+  username: true,
+  password: true,
+  email: true,
+  fullName: true,
+  phoneNumber: true,
+  address: true,
+  city: true,
+  postalCode: true,
+  userType: true,
+  serviceArea: true
+});
+var products = pgTable("products", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  category: text("category").notNull().default("Other"),
+  shippingCategory: text("shipping_category").notNull(),
+  // A, B, C, or Custom
+  shippingPrice: real("shipping_price").notNull(),
+  productStatus: text("product_status").notNull().default("unpaid"),
+  // paid or unpaid
+  shippingPaidBy: text("shipping_paid_by").notNull().default("buyer"),
+  // buyer or seller
+  price: real("price").notNull(),
+  weight: real("weight").notNull(),
+  quantity: integer("quantity").notNull(),
+  pickupAddress: text("pickup_address").notNull(),
+  pickupLatitude: text("pickup_latitude"),
+  pickupLongitude: text("pickup_longitude"),
+  city: text("city").notNull(),
+  postalCode: text("postal_code").notNull(),
+  createdAt: timestamp("created_at").defaultNow()
+});
+var insertProductSchema = createInsertSchema(products).pick({
+  userId: true,
+  name: true,
+  description: true,
+  category: true,
+  shippingCategory: true,
+  shippingPrice: true,
+  productStatus: true,
+  shippingPaidBy: true,
+  price: true,
+  weight: true,
+  quantity: true,
+  pickupAddress: true,
+  pickupLatitude: true,
+  pickupLongitude: true,
+  city: true,
+  postalCode: true
+});
+var orders = pgTable("orders", {
+  id: serial("id").primaryKey(),
+  transactionId: varchar("transaction_id", { length: 50 }).notNull().unique(),
+  productId: integer("product_id").notNull(),
+  sellerId: integer("seller_id").notNull(),
+  buyerId: integer("buyer_id"),
+  orderStatus: text("order_status").notNull().default("pending"),
+  // pending, paid, pickup_assigned, picked_up, in_warehouse, delivery_assigned, in_transit, delivered
+  pickupDriverId: integer("pickup_driver_id"),
+  deliveryDriverId: integer("delivery_driver_id"),
+  deliveryAddress: text("delivery_address"),
+  deliveryCity: text("delivery_city"),
+  deliveryPostalCode: text("delivery_postal_code"),
+  warehouseId: integer("warehouse_id"),
+  paymentId: text("payment_id"),
+  paymentStatus: text("payment_status").default("unpaid"),
+  // unpaid, paid
+  paymentLink: text("payment_link"),
+  // Bank transfer details - CATATAN: Kolom ini belum ada di database
+  // Gunakan sessionStorage di client untuk sementara waktu
+  // va_number: text("va_number"),
+  // bank: text("bank"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+var insertOrderSchema = createInsertSchema(orders).pick({
+  transactionId: true,
+  productId: true,
+  sellerId: true,
+  buyerId: true,
+  orderStatus: true,
+  pickupDriverId: true,
+  deliveryDriverId: true,
+  deliveryAddress: true,
+  deliveryCity: true,
+  deliveryPostalCode: true,
+  warehouseId: true,
+  paymentId: true,
+  paymentStatus: true,
+  paymentLink: true
+});
+var warehouses = pgTable("warehouses", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  address: text("address").notNull(),
+  city: text("city").notNull(),
+  region: text("region").notNull(),
+  postalCode: text("postal_code").notNull(),
+  areasServed: text("areas_served"),
+  // Kecamatan yang dilayani (dipisahkan dengan koma)
+  capacity: integer("capacity").default(100)
+  // Kapasitas warehouse
+});
+var insertWarehouseSchema = createInsertSchema(warehouses).pick({
+  name: true,
+  address: true,
+  city: true,
+  region: true,
+  postalCode: true,
+  areasServed: true,
+  capacity: true
+});
+var trackingEvents = pgTable("tracking_events", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id").notNull(),
+  status: text("status").notNull(),
+  description: text("description").notNull(),
+  location: text("location"),
+  timestamp: timestamp("timestamp").defaultNow()
+});
+var insertTrackingEventSchema = createInsertSchema(trackingEvents).pick({
+  orderId: true,
+  status: true,
+  description: true,
+  location: true
+});
+var userRegisterSchema = insertUserSchema.extend({
+  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
+  confirmPassword: z.string()
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"]
+});
+var productFormSchema = insertProductSchema.extend({
+  price: z.coerce.number().positive({ message: "Price must be a positive number" }),
+  weight: z.coerce.number().positive({ message: "Weight must be a positive number" }),
+  quantity: z.coerce.number().int().positive({ message: "Quantity must be a positive integer" })
+});
+var purchaseFormSchema = z.object({
+  firstName: z.string().min(1, { message: "First name is required" }),
+  lastName: z.string().min(1, { message: "Last name is required" }),
+  email: z.string().email({ message: "Invalid email address" }),
+  phone: z.string().min(8, { message: "Valid phone number is required" }),
+  deliveryAddress: z.string().min(5, { message: "Full address is required" }),
+  city: z.string().min(1, { message: "City is required" }),
+  state: z.string().min(1, { message: "State is required" }),
+  postalCode: z.string().min(1, { message: "Postal code is required" })
+});
+
+// server/storage.ts
+import session from "express-session";
+
+// server/db.ts
+import { Pool, neonConfig } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/neon-serverless";
+import ws from "ws";
+neonConfig.webSocketConstructor = ws;
+if (!process.env.DATABASE_URL) {
+  throw new Error(
+    "DATABASE_URL must be set. Did you forget to provision a database?"
+  );
+}
+var pool = new Pool({ connectionString: process.env.DATABASE_URL });
+var db = drizzle({ client: pool, schema: schema_exports });
+
+// server/storage.ts
+import { eq, and, or, isNull, count, desc } from "drizzle-orm";
+import connectPg from "connect-pg-simple";
+import createMemoryStore from "memorystore";
+var MemoryStore = createMemoryStore(session);
+var PostgresSessionStore = connectPg(session);
+var DatabaseStorage = class {
+  sessionStore;
+  constructor() {
+    this.sessionStore = new PostgresSessionStore({
+      pool,
+      createTableIfMissing: true
+    });
+    this.initializeWarehouses();
+  }
+  async initializeWarehouses() {
+    const warehouseCount = await db.select({ count: count() }).from(warehouses);
+    if (warehouseCount[0].count === 0) {
+      await db.insert(warehouses).values([
+        {
+          name: "Jakarta Warehouse",
+          address: "Jl. Warehouse No. 1",
+          city: "Jakarta",
+          region: "DKI Jakarta",
+          postalCode: "12345",
+          areasServed: "Jakarta Pusat,Jakarta Selatan",
+          capacity: 200
+        },
+        {
+          name: "Bandung Warehouse",
+          address: "Jl. Warehouse No. 2",
+          city: "Bandung",
+          region: "West Java",
+          postalCode: "40111",
+          areasServed: "Bandung Utara,Bandung Selatan",
+          capacity: 150
+        },
+        {
+          name: "Surabaya Warehouse",
+          address: "Jl. Warehouse No. 3",
+          city: "Surabaya",
+          region: "East Java",
+          postalCode: "60111",
+          areasServed: "Surabaya Pusat,Surabaya Timur",
+          capacity: 180
+        }
+      ]);
+    }
+  }
+  // User methods
+  async getUser(id) {
+    const result = await db.select().from(users).where(eq(users.id, id));
+    return result[0];
+  }
+  async getUserByUsername(username) {
+    const result = await db.select().from(users).where(eq(users.username, username));
+    return result[0];
+  }
+  async getAllUsers() {
+    return await db.select().from(users);
+  }
+  async createUser(insertUser) {
+    const result = await db.insert(users).values(insertUser).returning();
+    return result[0];
+  }
+  async updateUser(id, updates) {
+    const result = await db.update(users).set(updates).where(eq(users.id, id)).returning();
+    if (result.length === 0) {
+      throw new Error(`User with ID ${id} not found`);
+    }
+    return result[0];
+  }
+  // Product methods
+  async getProduct(id) {
+    const result = await db.select().from(products).where(eq(products.id, id));
+    return result[0];
+  }
+  async getAllProducts() {
+    return await db.select().from(products);
+  }
+  async getAvailableProducts() {
+    const availableOrders = await db.select().from(orders).where(and(
+      or(
+        eq(orders.orderStatus, "pending"),
+        eq(orders.orderStatus, "paid")
+      ),
+      isNull(orders.buyerId)
+    ));
+    const availableProducts = await Promise.all(availableOrders.map(async (order) => {
+      const product = await this.getProduct(order.productId);
+      if (product) {
+        return {
+          ...product,
+          orderId: order.id
+        };
+      }
+      return null;
+    }));
+    return availableProducts.filter((p) => p !== null);
+  }
+  async createProduct(insertProduct) {
+    const result = await db.insert(products).values(insertProduct).returning();
+    return result[0];
+  }
+  async updateProduct(id, updates) {
+    const result = await db.update(products).set(updates).where(eq(products.id, id)).returning();
+    if (result.length === 0) {
+      throw new Error(`Product with ID ${id} not found`);
+    }
+    return result[0];
+  }
+  // Order methods
+  async getOrder(id) {
+    const result = await db.select().from(orders).where(eq(orders.id, id));
+    return result[0];
+  }
+  async getOrderByTransactionId(transactionId) {
+    const result = await db.select().from(orders).where(eq(orders.transactionId, transactionId));
+    return result[0];
+  }
+  async getAllOrders() {
+    return await db.select().from(orders);
+  }
+  async getUserOrders(userId) {
+    return await db.select().from(orders).where(or(
+      eq(orders.sellerId, userId),
+      eq(orders.buyerId, userId)
+    ));
+  }
+  async getAvailableOrders() {
+    return await db.select().from(orders).where(or(
+      and(
+        eq(orders.orderStatus, "paid"),
+        isNull(orders.pickupDriverId)
+      ),
+      and(
+        eq(orders.orderStatus, "in_warehouse"),
+        isNull(orders.deliveryDriverId)
+      )
+    ));
+  }
+  async getDriverOrders(driverId) {
+    return await db.select().from(orders).where(or(
+      eq(orders.pickupDriverId, driverId),
+      eq(orders.deliveryDriverId, driverId)
+    ));
+  }
+  async createOrder(insertOrder) {
+    const result = await db.insert(orders).values(insertOrder).returning();
+    return result[0];
+  }
+  async updateOrder(id, updates) {
+    const result = await db.update(orders).set({ ...updates, updatedAt: /* @__PURE__ */ new Date() }).where(eq(orders.id, id)).returning();
+    if (result.length === 0) {
+      throw new Error(`Order with ID ${id} not found`);
+    }
+    return result[0];
+  }
+  // Warehouse methods
+  async getWarehouse(id) {
+    const result = await db.select().from(warehouses).where(eq(warehouses.id, id));
+    return result[0];
+  }
+  async getAllWarehouses() {
+    return await db.select().from(warehouses);
+  }
+  async createWarehouse(insertWarehouse) {
+    const result = await db.insert(warehouses).values(insertWarehouse).returning();
+    return result[0];
+  }
+  async updateWarehouse(id, updates) {
+    const result = await db.update(warehouses).set(updates).where(eq(warehouses.id, id)).returning();
+    if (result.length === 0) {
+      throw new Error(`Warehouse with ID ${id} not found`);
+    }
+    return result[0];
+  }
+  // Tracking methods
+  async getTrackingEvent(id) {
+    const result = await db.select().from(trackingEvents).where(eq(trackingEvents.id, id));
+    return result[0];
+  }
+  async getOrderTrackingEvents(orderId) {
+    return await db.select().from(trackingEvents).where(eq(trackingEvents.orderId, orderId)).orderBy(desc(trackingEvents.timestamp));
+  }
+  async createTrackingEvent(insertEvent) {
+    const result = await db.insert(trackingEvents).values(insertEvent).returning();
+    return result[0];
+  }
+};
+var storage = new DatabaseStorage();
+
+// server/auth.ts
+import passport from "passport";
+import { Strategy as LocalStrategy } from "passport-local";
+import session2 from "express-session";
+import { scrypt, randomBytes, timingSafeEqual } from "crypto";
+import { promisify } from "util";
+var scryptAsync = promisify(scrypt);
+async function hashPassword(password) {
+  const salt = randomBytes(16).toString("hex");
+  const buf = await scryptAsync(password, salt, 64);
+  return `${buf.toString("hex")}.${salt}`;
+}
+async function comparePasswords(supplied, stored) {
+  const [hashed, salt] = stored.split(".");
+  const hashedBuf = Buffer.from(hashed, "hex");
+  const suppliedBuf = await scryptAsync(supplied, salt, 64);
+  return timingSafeEqual(hashedBuf, suppliedBuf);
+}
+function setupAuth(app2) {
+  const sessionSettings = {
+    secret: process.env.SESSION_SECRET || "logistics_app_secret",
+    resave: false,
+    saveUninitialized: false,
+    store: storage.sessionStore,
+    cookie: {
+      maxAge: 7 * 24 * 60 * 60 * 1e3
+      // 7 days
+    }
+  };
+  app2.set("trust proxy", 1);
+  app2.use(session2(sessionSettings));
+  app2.use(passport.initialize());
+  app2.use(passport.session());
+  passport.use(
+    new LocalStrategy(async (username, password, done) => {
+      const user = await storage.getUserByUsername(username);
+      if (!user || !await comparePasswords(password, user.password)) {
+        return done(null, false);
+      } else {
+        return done(null, user);
+      }
+    })
+  );
+  passport.serializeUser((user, done) => done(null, user.id));
+  passport.deserializeUser(async (id, done) => {
+    const user = await storage.getUser(id);
+    done(null, user);
+  });
+  app2.post("/api/register", async (req, res, next) => {
+    try {
+      const existingUser = await storage.getUserByUsername(req.body.username);
+      if (existingUser) {
+        return res.status(400).send("Username already exists");
+      }
+      const user = await storage.createUser({
+        ...req.body,
+        password: await hashPassword(req.body.password)
+      });
+      req.login(user, (err) => {
+        if (err) return next(err);
+        res.status(201).json(user);
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+  app2.post("/api/login", passport.authenticate("local"), (req, res) => {
+    res.status(200).json(req.user);
+  });
+  app2.post("/api/logout", (req, res, next) => {
+    req.logout((err) => {
+      if (err) return next(err);
+      res.sendStatus(200);
+    });
+  });
+  app2.get("/api/user", (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    res.json(req.user);
+  });
+}
+
+// server/midtrans.ts
+import midtransClient from "midtrans-client";
+import crypto from "crypto";
+import { createHash } from "crypto";
+var MIDTRANS_SERVER_KEY = process.env.MIDTRANS_SERVER_KEY || "Mid-server-EOC-6ehtF8gBTux1n6SaVp3H";
+var MIDTRANS_CLIENT_KEY = process.env.MIDTRANS_CLIENT_KEY || "Mid-client-ajysHU-3bFyOUAc7";
+if (!MIDTRANS_SERVER_KEY || !MIDTRANS_CLIENT_KEY) {
+  console.error(
+    "MIDTRANS_SERVER_KEY or MIDTRANS_CLIENT_KEY environment variables are missing"
+  );
+}
+var IS_PRODUCTION = true;
+var coreApi = new midtransClient.CoreApi({
+  isProduction: IS_PRODUCTION,
+  serverKey: MIDTRANS_SERVER_KEY,
+  clientKey: MIDTRANS_CLIENT_KEY
+});
+var snap = new midtransClient.Snap({
+  isProduction: IS_PRODUCTION,
+  serverKey: MIDTRANS_SERVER_KEY,
+  clientKey: MIDTRANS_CLIENT_KEY
+});
+function isValidSignature(reqBody, signatureKey) {
+  const { order_id, status_code, gross_amount } = reqBody;
+  const serverKey = MIDTRANS_SERVER_KEY;
+  if (!order_id || !status_code || !gross_amount) {
+    return false;
+  }
+  const rawSignature = order_id + status_code + gross_amount + serverKey;
+  const expectedSignature = createHash("sha512").update(rawSignature).digest("hex");
+  return expectedSignature === signatureKey;
+}
+function generateTransactionId() {
+  const now = /* @__PURE__ */ new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  const randomStr = Math.random().toString(36).substring(2, 8).toUpperCase();
+  return `${year}_${month}${day}_${randomStr}`;
+}
+async function createPayment(params) {
+  try {
+    if (params.amount <= 0) {
+      throw new Error("Invalid payment amount");
+    }
+    if (!params.payerEmail || !params.payerEmail.includes("@")) {
+      throw new Error("Invalid email address");
+    }
+    console.log(
+      `Creating Midtrans payment for transaction ${params.externalID}`
+    );
+    const orderId = `${params.externalID}`;
+    let totalAmount = params.amount;
+    const itemDetails = params.itemDetails || [
+      {
+        id: "ITEM1",
+        price: Math.floor(params.amount),
+        quantity: 1,
+        name: params.description
+      }
+    ];
+    if (params.itemDetails) {
+      totalAmount = params.itemDetails.reduce((total, item) => {
+        return total + item.price * item.quantity;
+      }, 0);
+    }
+    const parameter = {
+      transaction_details: {
+        order_id: orderId,
+        gross_amount: Math.floor(totalAmount)
+      },
+      customer_details: params.customerDetails ? {
+        first_name: params.customerDetails.firstName.split(" ")[0],
+        last_name: params.customerDetails.firstName.split(" ").slice(1).join(" ") || "",
+        email: params.customerDetails.email,
+        phone: params.customerDetails.phone || ""
+      } : {
+        first_name: "Pembeli",
+        email: params.payerEmail
+      },
+      item_details: itemDetails,
+      callbacks: {
+        finish: params.successRedirectURL || "https://localhost:5000/order-success",
+        error: params.failureRedirectURL || "https://localhost:5000/order-failed",
+        pending: ""
+      },
+      credit_card: {
+        secure: true
+      },
+      enabled_payments: [
+        "credit_card",
+        "mandiri_clickpay",
+        "bca_clickpay",
+        "bca_klikbca",
+        "bri_epay",
+        "cimb_clicks",
+        "danamon_online",
+        "bni_va",
+        "bca_va",
+        "bri_va",
+        "other_va",
+        "gopay",
+        "indomaret",
+        "alfamart",
+        "akulaku",
+        "shopeepay",
+        "permata_va",
+        "mandiri_va",
+        "ovo",
+        "dana"
+      ]
+    };
+    if (!IS_PRODUCTION) {
+      console.log(
+        "Creating Midtrans Snap transaction with params:",
+        JSON.stringify(parameter, null, 2)
+      );
+    }
+    const transaction = await snap.createTransaction(parameter);
+    if (!IS_PRODUCTION) {
+      console.log("Midtrans Core transaction created:", transaction);
+    }
+    let redirectUrl = transaction.redirect_url;
+    if (redirectUrl) {
+      if (redirectUrl.includes("/v2/") || redirectUrl.includes("/v4/")) {
+        redirectUrl = redirectUrl.replace(/\/v[24]\//g, "/v3/");
+        console.log(
+          "URL changed to v3 format to avoid 404 issues:",
+          redirectUrl
+        );
+      }
+    }
+    const payment = {
+      token: transaction.token || "",
+      redirect_url: transaction.redirect_url || "",
+      transaction_id: orderId,
+      order_id: orderId,
+      merchant_id: "LogiTech",
+      gross_amount: totalAmount.toString(),
+      // Gunakan totalAmount yang sudah dihitung ulang
+      currency: "IDR",
+      payment_type: "snap",
+      // Snap mendukung berbagai metode pembayaran
+      transaction_time: (/* @__PURE__ */ new Date()).toISOString(),
+      transaction_status: "pending",
+      status_code: "201",
+      status_message: "Snap payment page created",
+      // Bank transfer info akan diperoleh setelah pelanggan memilih metode pembayaran
+      va_number: "",
+      bank: ""
+    };
+    return payment;
+  } catch (error) {
+    console.error("Error creating Midtrans payment:", error);
+    if (!IS_PRODUCTION) {
+      console.log("Creating mock payment as fallback");
+      let mockTotalAmount = params.amount;
+      if (params.itemDetails) {
+        mockTotalAmount = params.itemDetails.reduce((total, item) => {
+          return total + item.price * item.quantity;
+        }, 0);
+      }
+      const mockPayment = {
+        token: crypto.randomBytes(12).toString("hex"),
+        redirect_url: `https://app.midtrans.com/snap/v3/placeholder/${params.externalID}`,
+        transaction_id: params.externalID,
+        order_id: params.externalID,
+        merchant_id: "LogiTech",
+        gross_amount: mockTotalAmount.toString(),
+        currency: "IDR",
+        payment_type: "bank_transfer",
+        transaction_time: (/* @__PURE__ */ new Date()).toISOString(),
+        transaction_status: "pending",
+        status_code: "201",
+        status_message: "Success, test transaction is created",
+        va_number: "80777123456",
+        bank: "bca"
+        // Hasil API biasanya menggunakan BCA
+      };
+      console.log("Mock Midtrans payment created:", mockPayment);
+      return mockPayment;
+    }
+    throw error;
+  }
+}
+async function getPaymentStatus(orderId) {
+  try {
+    console.log(`Checking payment status for Midtrans order ID: ${orderId}`);
+    const response = await coreApi.transaction.status(orderId);
+    if (!IS_PRODUCTION) {
+      console.log(`Midtrans payment status response:`, response);
+    }
+    let status;
+    switch (response.transaction_status) {
+      case "capture":
+      case "settlement":
+        status = "PAID";
+        break;
+      case "pending":
+        status = "PENDING";
+        break;
+      case "deny":
+      case "cancel":
+      case "expire":
+        status = "EXPIRED";
+        break;
+      case "refund":
+      case "partial_refund":
+        status = "REFUNDED";
+        break;
+      case "failure":
+      default:
+        status = "FAILED";
+        break;
+    }
+    if (!IS_PRODUCTION) {
+      console.log(
+        `Converted Midtrans status ${response.transaction_status} to app status: ${status}`
+      );
+    }
+    return status;
+  } catch (error) {
+    console.error(`Error getting payment status from Midtrans:`, error);
+    if (!IS_PRODUCTION) {
+      console.log(`Using mock payment status for order ${orderId}`);
+      const statuses = ["PENDING", "PAID", "PAID", "PAID", "EXPIRED"];
+      const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
+      console.log(`Mock payment status: ${randomStatus}`);
+      return randomStatus;
+    }
+    throw error;
+  }
+}
+function parseWebhook(requestBody, signatureKey) {
+  try {
+    if (!IS_PRODUCTION) {
+      console.log("Received Midtrans webhook:", {
+        order_id: requestBody.order_id,
+        transaction_status: requestBody.transaction_status,
+        transaction_id: requestBody.transaction_id
+      });
+    } else {
+      console.log(`Received Midtrans webhook for order: ${requestBody.order_id}`);
+    }
+    if (!requestBody.order_id || !requestBody.transaction_status) {
+      console.error("Webhook missing required fields");
+      return null;
+    }
+    if (signatureKey && !isValidSignature(requestBody, signatureKey)) {
+      console.error("Invalid webhook signature");
+      return null;
+    }
+    let status;
+    switch (requestBody.transaction_status) {
+      case "capture":
+      case "settlement":
+        status = "PAID";
+        break;
+      case "pending":
+        status = "PENDING";
+        break;
+      case "deny":
+      case "cancel":
+      case "expire":
+        status = "EXPIRED";
+        break;
+      case "refund":
+      case "partial_refund":
+        status = "REFUNDED";
+        break;
+      default:
+        status = "FAILED";
+        break;
+    }
+    return {
+      order_id: requestBody.order_id,
+      status,
+      transaction_id: requestBody.transaction_id || requestBody.order_id
+    };
+  } catch (error) {
+    console.error("Error parsing Midtrans webhook:", error);
+    return null;
+  }
+}
+
+// server/routes.ts
+var IS_PRODUCTION2 = process.env.NODE_ENV === "production";
+async function registerRoutes(app2) {
+  setupAuth(app2);
+  app2.get("/api/orders", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      if (req.user.userType !== "admin") {
+        return res.status(403).json({ message: "Forbidden: Not an admin" });
+      }
+      const orders2 = await storage.getAllOrders();
+      const ordersWithDetails = await Promise.all(orders2.map(async (order) => {
+        const product = await storage.getProduct(order.productId);
+        const seller = await storage.getUser(order.sellerId);
+        const buyer = order.buyerId ? await storage.getUser(order.buyerId) : null;
+        return {
+          ...order,
+          product: product ? {
+            id: product.id,
+            name: product.name,
+            price: product.price,
+            shippingPrice: product.shippingPrice,
+            category: product.category
+          } : null,
+          sellerName: seller ? seller.fullName || seller.username : null,
+          buyerName: buyer ? buyer.fullName || buyer.username : null
+        };
+      }));
+      res.json(ordersWithDetails);
+    } catch (error) {
+      next(error);
+    }
+  });
+  app2.get("/api/drivers", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      if (req.user.userType !== "admin" && req.user.userType !== "driver") {
+        return res.status(403).json({ message: "Forbidden: Insufficient permissions" });
+      }
+      const users2 = await storage.getAllUsers();
+      const drivers = users2.filter((user) => user.userType === "driver");
+      res.json(drivers);
+    } catch (error) {
+      next(error);
+    }
+  });
+  app2.patch("/api/drivers/:id", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      if (req.user.userType !== "admin") {
+        return res.status(403).json({ message: "Forbidden: Insufficient permissions" });
+      }
+      const driverId = parseInt(req.params.id);
+      const driver = await storage.getUser(driverId);
+      if (!driver) {
+        return res.status(404).json({ message: "Driver not found" });
+      }
+      if (driver.userType !== "driver") {
+        return res.status(400).json({ message: "User is not a driver" });
+      }
+      const allowedFields = [
+        "fullName",
+        "email",
+        "phoneNumber",
+        "address",
+        "city",
+        "postalCode",
+        "serviceArea"
+      ];
+      const filteredData = {};
+      Object.keys(req.body).forEach((key) => {
+        if (allowedFields.includes(key)) {
+          filteredData[key] = req.body[key];
+        }
+      });
+      const updatedDriver = await storage.updateUser(driverId, filteredData);
+      res.json(updatedDriver);
+    } catch (error) {
+      next(error);
+    }
+  });
+  app2.post("/api/warehouses", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      if (req.user.userType !== "admin") {
+        return res.status(403).json({ message: "Forbidden: Not an admin" });
+      }
+      const warehouse = await storage.createWarehouse(req.body);
+      res.status(201).json(warehouse);
+    } catch (error) {
+      next(error);
+    }
+  });
+  app2.get("/api/warehouses", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      if (req.user.userType !== "admin" && req.user.userType !== "driver") {
+        return res.status(403).json({ message: "Forbidden: Insufficient permissions" });
+      }
+      const warehouses2 = await storage.getAllWarehouses();
+      if (req.query.include === "orders") {
+        const orders2 = await storage.getAllOrders();
+        const warehousesWithCounts = warehouses2.map((warehouse) => {
+          const warehouseOrders = orders2.filter((order) => order.warehouseId === warehouse.id);
+          const incomingCount = warehouseOrders.filter((o) => ["paid", "pickup_assigned", "picked_up"].includes(o.orderStatus)).length;
+          const inWarehouseCount = warehouseOrders.filter((o) => ["in_warehouse"].includes(o.orderStatus)).length;
+          const outgoingCount = warehouseOrders.filter((o) => ["delivery_assigned", "in_transit"].includes(o.orderStatus)).length;
+          return {
+            ...warehouse,
+            orderCounts: {
+              incoming: incomingCount,
+              inWarehouse: inWarehouseCount,
+              outgoing: outgoingCount,
+              total: warehouseOrders.length
+            }
+          };
+        });
+        return res.json(warehousesWithCounts);
+      }
+      res.json(warehouses2);
+    } catch (error) {
+      next(error);
+    }
+  });
+  app2.get("/api/warehouses/:id", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const warehouseId = parseInt(req.params.id);
+      const warehouse = await storage.getWarehouse(warehouseId);
+      if (!warehouse) {
+        return res.status(404).json({ message: "Warehouse not found" });
+      }
+      res.json(warehouse);
+    } catch (error) {
+      next(error);
+    }
+  });
+  app2.patch("/api/warehouses/:id", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      if (req.user.userType !== "admin") {
+        return res.status(403).json({ message: "Forbidden: Insufficient permissions" });
+      }
+      const warehouseId = parseInt(req.params.id);
+      const warehouse = await storage.getWarehouse(warehouseId);
+      if (!warehouse) {
+        return res.status(404).json({ message: "Warehouse not found" });
+      }
+      const updatedWarehouse = await storage.updateWarehouse(warehouseId, {
+        ...req.body
+      });
+      res.json(updatedWarehouse);
+    } catch (error) {
+      next(error);
+    }
+  });
+  app2.get("/api/users", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      if (req.user.userType !== "admin") {
+        return res.status(403).json({ message: "Forbidden: Not an admin" });
+      }
+      const users2 = await storage.getAllUsers();
+      res.json(users2);
+    } catch (error) {
+      next(error);
+    }
+  });
+  app2.get("/api/users/:id", async (req, res, next) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json(user);
+    } catch (error) {
+      next(error);
+    }
+  });
+  app2.post("/api/products", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const product = await storage.createProduct({
+        ...req.body,
+        userId: req.user.id
+      });
+      res.status(201).json(product);
+    } catch (error) {
+      next(error);
+    }
+  });
+  app2.get("/api/products", async (req, res, next) => {
+    try {
+      const products2 = await storage.getAllProducts();
+      res.json(products2);
+    } catch (error) {
+      next(error);
+    }
+  });
+  app2.get("/api/products/available", async (req, res, next) => {
+    try {
+      const availableProducts = await storage.getAvailableProducts();
+      res.json(availableProducts);
+    } catch (error) {
+      next(error);
+    }
+  });
+  app2.get("/api/products/:id", async (req, res, next) => {
+    try {
+      const productId = parseInt(req.params.id);
+      const product = await storage.getProduct(productId);
+      if (!product) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+      res.json(product);
+    } catch (error) {
+      next(error);
+    }
+  });
+  app2.post("/api/orders", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const transactionId = req.body.transactionId || generateTransactionId();
+      const order = await storage.createOrder({
+        ...req.body,
+        transactionId,
+        sellerId: req.body.sellerId || req.user.id
+      });
+      const product = await storage.getProduct(order.productId);
+      await storage.createTrackingEvent({
+        orderId: order.id,
+        status: "pending",
+        description: "Order created",
+        location: product?.city
+      });
+      res.status(201).json({
+        ...order,
+        productName: product?.name,
+        price: product?.price
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+  app2.get("/api/orders/user", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const userId = req.user.id;
+      const orders2 = await storage.getUserOrders(userId);
+      const ordersWithProductNames = await Promise.all(orders2.map(async (order) => {
+        const product = await storage.getProduct(order.productId);
+        return {
+          ...order,
+          productName: product?.name
+        };
+      }));
+      res.json(ordersWithProductNames);
+    } catch (error) {
+      next(error);
+    }
+  });
+  app2.get("/api/orders/available", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const availableOrders = await storage.getAvailableOrders();
+      const ordersWithProductNames = await Promise.all(availableOrders.map(async (order) => {
+        const product = await storage.getProduct(order.productId);
+        return {
+          ...order,
+          productName: product?.name
+        };
+      }));
+      res.json(ordersWithProductNames);
+    } catch (error) {
+      next(error);
+    }
+  });
+  app2.get("/api/orders/driver", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      if (req.user.userType !== "driver") {
+        return res.status(403).json({ message: "Forbidden: Not a driver" });
+      }
+      const driverId = req.user.id;
+      const orders2 = await storage.getDriverOrders(driverId);
+      const ordersWithProductNames = await Promise.all(orders2.map(async (order) => {
+        const product = await storage.getProduct(order.productId);
+        return {
+          ...order,
+          productName: product?.name
+        };
+      }));
+      res.json(ordersWithProductNames);
+    } catch (error) {
+      next(error);
+    }
+  });
+  app2.get("/api/orders/transaction/:transactionId", async (req, res, next) => {
+    try {
+      const transactionId = req.params.transactionId;
+      const order = await storage.getOrderByTransactionId(transactionId);
+      if (!order) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+      res.json(order);
+    } catch (error) {
+      next(error);
+    }
+  });
+  app2.get("/api/orders/:id", async (req, res, next) => {
+    try {
+      const orderId = parseInt(req.params.id);
+      const order = await storage.getOrder(orderId);
+      if (!order) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+      res.json(order);
+    } catch (error) {
+      next(error);
+    }
+  });
+  app2.patch("/api/orders/:id", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const orderId = parseInt(req.params.id);
+      const order = await storage.getOrder(orderId);
+      if (!order) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+      if (req.user.id === order.sellerId || req.user.id === order.buyerId || req.user.id === order.pickupDriverId || req.user.id === order.deliveryDriverId || req.user.userType === "admin") {
+        const updatedOrder = await storage.updateOrder(orderId, req.body);
+        return res.json(updatedOrder);
+      }
+      res.status(403).json({ message: "Forbidden: You don't have permission to update this order" });
+    } catch (error) {
+      next(error);
+    }
+  });
+  app2.patch("/api/orders/:id/status", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const orderId = parseInt(req.params.id);
+      const order = await storage.getOrder(orderId);
+      if (!order) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+      const { status, description, location, driverId } = req.body;
+      const updates = { orderStatus: status };
+      if (driverId) {
+        if (status === "pickup_assigned") {
+          updates.pickupDriverId = driverId;
+        } else if (status === "delivery_assigned") {
+          updates.deliveryDriverId = driverId;
+        }
+      }
+      const updatedOrder = await storage.updateOrder(orderId, updates);
+      await storage.createTrackingEvent({
+        orderId,
+        status,
+        description,
+        location
+      });
+      res.json(updatedOrder);
+    } catch (error) {
+      next(error);
+    }
+  });
+  app2.get("/api/tracking/:orderId", async (req, res, next) => {
+    try {
+      const orderId = parseInt(req.params.orderId);
+      const trackingEvents3 = await storage.getOrderTrackingEvents(orderId);
+      res.json(trackingEvents3);
+    } catch (error) {
+      next(error);
+    }
+  });
+  app2.post("/api/tracking", async (req, res, next) => {
+    try {
+      const data = insertTrackingEventSchema.parse(req.body);
+      const event = await storage.createTrackingEvent(data);
+      res.status(201).json(event);
+    } catch (error) {
+      console.error("Error creating tracking event:", error);
+      next(error);
+    }
+  });
+  app2.post("/api/orders/:id/purchase", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const orderId = parseInt(req.params.id);
+      const { buyerId } = req.body;
+      const order = await storage.getOrder(orderId);
+      if (!order) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+      if (order.buyerId) {
+        return res.status(400).json({ message: "This order has already been purchased" });
+      }
+      const product = await storage.getProduct(order.productId);
+      if (!product) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+      const updatedOrder = await storage.updateOrder(orderId, {
+        buyerId: buyerId || req.user.id,
+        orderStatus: "pending_payment"
+      });
+      await storage.createTrackingEvent({
+        orderId,
+        status: "pending_payment",
+        description: "Buyer assigned to order",
+        location: product.city
+      });
+      res.json(updatedOrder);
+    } catch (error) {
+      next(error);
+    }
+  });
+  app2.post("/api/payments", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const {
+        orderId,
+        customerName,
+        customerEmail,
+        deliveryAddress,
+        deliveryCity,
+        deliveryState,
+        deliveryPostalCode,
+        phoneNumber
+      } = req.body;
+      if (!orderId) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+      if (deliveryAddress) {
+        console.log("Updating order with delivery information:", {
+          deliveryAddress,
+          deliveryCity,
+          deliveryPostalCode
+        });
+      }
+      const order = await storage.getOrder(orderId);
+      if (!order) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+      const product = await storage.getProduct(order.productId);
+      if (!product) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+      const totalAmount = product.price + product.shippingPrice;
+      console.log(`Creating payment for order ${orderId}:`, {
+        transactionId: order.transactionId,
+        productName: product.name,
+        productPrice: product.price,
+        shippingPrice: product.shippingPrice,
+        totalAmount
+      });
+      const baseUrl = `${req.protocol}://${req.get("host") || req.headers.host || "localhost:5000"}`;
+      const successUrl = new URL(`/order-success?id=${orderId}`, baseUrl).toString();
+      const failureUrl = new URL(`/order-failed?id=${orderId}`, baseUrl).toString();
+      console.log("Payment redirect URLs:", {
+        success: successUrl,
+        failure: failureUrl
+      });
+      const payment = await createPayment({
+        externalID: order.transactionId,
+        payerEmail: customerEmail || req.user.email || "customer@example.com",
+        description: `Payment for ${product.name}`,
+        amount: totalAmount,
+        successRedirectURL: successUrl,
+        failureRedirectURL: failureUrl,
+        itemDetails: [
+          {
+            id: `PROD-${product.id}`,
+            price: product.price,
+            quantity: 1,
+            name: product.name
+          },
+          {
+            id: "SHIPPING",
+            price: product.shippingPrice,
+            quantity: 1,
+            name: "Shipping Cost"
+          }
+        ],
+        customerDetails: {
+          firstName: customerName || req.user.fullName || req.user.username,
+          email: customerEmail || req.user.email || "customer@example.com",
+          phone: phoneNumber || req.user.phoneNumber || ""
+        }
+      });
+      console.log(`\u2705 Created new Midtrans payment for transaction: ${order.transactionId}`);
+      console.log(`Redirect URL: ${payment.redirect_url}, VA: ${payment.va_number}, Bank: ${payment.bank}`);
+      console.log("Using payment data:", payment);
+      const orderUpdateData = {
+        paymentId: order.transactionId,
+        paymentLink: payment.redirect_url,
+        buyerId: req.user.id,
+        orderStatus: "pending_payment",
+        paymentStatus: "pending",
+        va_number: payment.va_number,
+        bank: payment.bank
+      };
+      if (deliveryAddress) {
+        orderUpdateData.deliveryAddress = deliveryAddress;
+        orderUpdateData.deliveryCity = deliveryCity;
+        orderUpdateData.deliveryPostalCode = deliveryPostalCode;
+      }
+      const updatedOrder = await storage.updateOrder(orderId, orderUpdateData);
+      await storage.createTrackingEvent({
+        orderId: order.id,
+        status: "payment_initiated",
+        description: `Payment initiated via Midtrans (${payment.transaction_id || payment.order_id})`,
+        location: null
+      });
+      res.json({
+        orderId,
+        paymentId: payment.transaction_id || payment.order_id,
+        paymentLink: payment.redirect_url,
+        amount: totalAmount,
+        va_number: payment.va_number,
+        // VA number untuk bank transfer
+        bank: payment.bank
+        // Nama bank untuk virtual account
+      });
+    } catch (error) {
+      console.error("Error creating payment:", error);
+      next(error);
+    }
+  });
+  app2.get("/api/payments/:paymentId/status", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const { paymentId } = req.params;
+      if (!paymentId) {
+        return res.status(400).json({ message: "Payment ID is required" });
+      }
+      console.log(`Checking payment status for Midtrans order ID: ${paymentId}`);
+      const status = await getPaymentStatus(paymentId);
+      console.log(`Payment status for Midtrans order ${paymentId}: ${status}`);
+      if (status === "PAID" || status === "SETTLED") {
+        const orders2 = await storage.getAllOrders();
+        const order = orders2.find(
+          (order2) => order2.paymentId === paymentId || order2.transactionId === paymentId
+          // Cari juga berdasarkan transactionId karena Midtrans sering menggunakan itu
+        );
+        if (order && order.paymentStatus !== "paid") {
+          console.log(`Updating order ${order.id} status to paid based on status check`);
+          await storage.updateOrder(order.id, {
+            orderStatus: "paid",
+            paymentStatus: "paid"
+          });
+          await storage.createTrackingEvent({
+            orderId: order.id,
+            status: "paid",
+            description: "Payment confirmed via Midtrans status check",
+            location: null
+          });
+        }
+      }
+      res.json({
+        orderId: paymentId,
+        // Midtrans menggunakan order_id
+        paymentId,
+        status,
+        statusLower: status.toLowerCase(),
+        timestamp: (/* @__PURE__ */ new Date()).toISOString()
+      });
+    } catch (error) {
+      console.error("Error checking Midtrans payment status:", error);
+      next(error);
+    }
+  });
+  app2.post("/api/payments/snap-token", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const { orderId, amount, customerName, customerEmail } = req.body;
+      if (!orderId || !amount) {
+        return res.status(400).json({ message: "orderId and amount are required" });
+      }
+      console.log(`Creating Snap token for order ${orderId} with amount ${amount}`);
+      const order = await storage.getOrder(orderId);
+      if (!order) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+      const product = await storage.getProduct(order.productId);
+      if (!product) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+      const parameter = {
+        transaction_details: {
+          order_id: order.transactionId,
+          gross_amount: Math.floor(amount)
+        },
+        customer_details: {
+          first_name: customerName?.split(" ")[0] || req.user.username,
+          last_name: customerName?.split(" ").slice(1).join(" ") || "",
+          email: customerEmail || req.user.email
+        },
+        item_details: [
+          {
+            id: `PROD-${product.id}`,
+            price: Math.floor(product.price),
+            quantity: 1,
+            name: product.name
+          },
+          {
+            id: "SHIPPING",
+            price: Math.floor(product.shippingPrice),
+            quantity: 1,
+            name: "Shipping Cost"
+          }
+        ]
+      };
+      try {
+        const snapResponse = await snap.createTransaction(parameter);
+        console.log("Snap transaction created:", snapResponse);
+        await storage.updateOrder(orderId, {
+          paymentId: snapResponse.token,
+          orderStatus: "pending_payment",
+          paymentStatus: "pending"
+        });
+        res.json({
+          token: snapResponse.token,
+          redirectUrl: snapResponse.redirect_url
+        });
+      } catch (snapError) {
+        console.error("Error creating Snap transaction:", snapError);
+        try {
+          console.log("Attempting to create payment with createPayment as fallback");
+          const payment = await createPayment({
+            externalID: order.transactionId,
+            payerEmail: customerEmail || req.user.email,
+            description: `Payment for ${product.name}`,
+            amount,
+            customerDetails: {
+              firstName: customerName || req.user.username,
+              email: customerEmail || req.user.email
+            },
+            itemDetails: [
+              {
+                id: `PROD-${product.id}`,
+                price: product.price,
+                quantity: 1,
+                name: product.name
+              },
+              {
+                id: "SHIPPING",
+                price: product.shippingPrice,
+                quantity: 1,
+                name: "Shipping Cost"
+              }
+            ]
+          });
+          await storage.updateOrder(orderId, {
+            paymentLink: payment.redirect_url,
+            paymentId: payment.transaction_id,
+            orderStatus: "pending_payment",
+            paymentStatus: "pending"
+          });
+          res.json({
+            token: payment.token,
+            redirectUrl: payment.redirect_url,
+            va_number: payment.va_number || "",
+            bank: payment.bank || "",
+            message: "Created payment with alternative method"
+          });
+        } catch (paymentError) {
+          console.error("Both Snap and createPayment methods failed:", paymentError);
+          console.error("Failed to create payment with both primary and fallback methods");
+          await storage.updateOrder(orderId, {
+            orderStatus: "payment_failed",
+            paymentStatus: "failed"
+          });
+          res.status(500).json({
+            error: "Gagal membuat transaksi pembayaran. Silakan coba lagi nanti."
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error in snap-token endpoint:", error);
+      next(error);
+    }
+  });
+  app2.post("/api/payments/webhook", async (req, res, next) => {
+    try {
+      console.log("Received webhook call from Midtrans");
+      console.log("Webhook body:", JSON.stringify(req.body, null, 2));
+      const webhook = parseWebhook(req.body);
+      if (!webhook) {
+        console.error("Invalid webhook payload from Midtrans");
+        return res.status(400).send("Invalid webhook payload");
+      }
+      const { order_id, status, transaction_id } = webhook;
+      console.log(`Processing Midtrans webhook: order ID ${order_id}, status ${status}`);
+      const order = await storage.getOrderByTransactionId(order_id);
+      if (!order) {
+        console.error(`Order not found for transaction ID: ${order_id}`);
+        return res.status(404).send("Order not found");
+      }
+      if (status === "PAID" || status === "SETTLED") {
+        console.log(`Payment confirmed for order ${order.id}, updating status`);
+        await storage.updateOrder(order.id, {
+          orderStatus: "paid",
+          paymentStatus: "paid",
+          paymentId: transaction_id || order_id
+        });
+        await storage.createTrackingEvent({
+          orderId: order.id,
+          status: "paid",
+          description: "Payment confirmed via Midtrans",
+          location: null
+        });
+        console.log(`Order ${order.id} updated successfully`);
+      } else if (status === "EXPIRED" || status === "FAILED") {
+        console.log(`Payment ${status} for order ${order.id}, updating status`);
+        await storage.updateOrder(order.id, {
+          paymentStatus: status.toLowerCase()
+        });
+        await storage.createTrackingEvent({
+          orderId: order.id,
+          status: "payment_" + status.toLowerCase(),
+          description: `Payment ${status.toLowerCase()} - ${transaction_id || order_id}`,
+          location: null
+        });
+      }
+      res.status(200).send("Webhook processed successfully");
+    } catch (error) {
+      console.error("Error processing payment webhook:", error);
+      res.status(200).send("Webhook received with errors");
+    }
+  });
+  app2.get("/api/warehouses", async (req, res, next) => {
+    try {
+      const warehouses2 = await storage.getAllWarehouses();
+      res.json(warehouses2);
+    } catch (error) {
+      next(error);
+    }
+  });
+  app2.post("/api/warehouses", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated() || req.user.userType !== "admin") {
+        return res.status(403).json({ message: "Forbidden: Only admins can create warehouses" });
+      }
+      const warehouse = await storage.createWarehouse(req.body);
+      res.status(201).json(warehouse);
+    } catch (error) {
+      next(error);
+    }
+  });
+  const httpServer = createServer(app2);
+  return httpServer;
+}
+
+// server/vite.ts
+import express from "express";
+import fs from "fs";
+import path2 from "path";
+import { createServer as createViteServer, createLogger } from "vite";
+
+// vite.config.ts
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import themePlugin from "@replit/vite-plugin-shadcn-theme-json";
+import path from "path";
+import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
+var vite_config_default = defineConfig({
+  plugins: [
+    react(),
+    runtimeErrorOverlay(),
+    themePlugin(),
+    ...process.env.NODE_ENV !== "production" && process.env.REPL_ID !== void 0 ? [
+      await import("@replit/vite-plugin-cartographer").then(
+        (m) => m.cartographer()
+      )
+    ] : []
+  ],
+  resolve: {
+    alias: {
+      "@": path.resolve(import.meta.dirname, "client", "src"),
+      "@shared": path.resolve(import.meta.dirname, "shared"),
+      "@assets": path.resolve(import.meta.dirname, "attached_assets")
+    }
+  },
+  root: path.resolve(import.meta.dirname, "client"),
+  build: {
+    outDir: path.resolve(import.meta.dirname, "dist/public"),
+    emptyOutDir: true
+  }
+});
+
+// server/vite.ts
+import { nanoid } from "nanoid";
+var viteLogger = createLogger();
+function log(message, source = "express") {
+  const formattedTime = (/* @__PURE__ */ new Date()).toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true
+  });
+  console.log(`${formattedTime} [${source}] ${message}`);
+}
+async function setupVite(app2, server) {
+  const serverOptions = {
+    middlewareMode: true,
+    hmr: { server },
+    allowedHosts: true
+  };
+  const vite = await createViteServer({
+    ...vite_config_default,
+    configFile: false,
+    customLogger: {
+      ...viteLogger,
+      error: (msg, options) => {
+        viteLogger.error(msg, options);
+        process.exit(1);
+      }
+    },
+    server: serverOptions,
+    appType: "custom"
+  });
+  app2.use(vite.middlewares);
+  app2.use("*", async (req, res, next) => {
+    const url = req.originalUrl;
+    try {
+      const clientTemplate = path2.resolve(
+        import.meta.dirname,
+        "..",
+        "client",
+        "index.html"
+      );
+      let template = await fs.promises.readFile(clientTemplate, "utf-8");
+      template = template.replace(
+        `src="/src/main.tsx"`,
+        `src="/src/main.tsx?v=${nanoid()}"`
+      );
+      const page = await vite.transformIndexHtml(url, template);
+      res.status(200).set({ "Content-Type": "text/html" }).end(page);
+    } catch (e) {
+      vite.ssrFixStacktrace(e);
+      next(e);
+    }
+  });
+}
+function serveStatic(app2) {
+  const distPath = path2.resolve(import.meta.dirname, "public");
+  if (!fs.existsSync(distPath)) {
+    throw new Error(
+      `Could not find the build directory: ${distPath}, make sure to build the client first`
+    );
+  }
+  app2.use(express.static(distPath));
+  app2.use("*", (_req, res) => {
+    res.sendFile(path2.resolve(distPath, "index.html"));
+  });
+}
+
+// server/index.ts
+var app = express2();
+app.use(express2.json());
+app.use(express2.urlencoded({ extended: false }));
+app.use((req, res, next) => {
+  const start = Date.now();
+  const path3 = req.path;
+  let capturedJsonResponse = void 0;
+  const originalResJson = res.json;
+  res.json = function(bodyJson, ...args) {
+    capturedJsonResponse = bodyJson;
+    return originalResJson.apply(res, [bodyJson, ...args]);
+  };
+  res.on("finish", () => {
+    const duration = Date.now() - start;
+    if (path3.startsWith("/api")) {
+      let logLine = `${req.method} ${path3} ${res.statusCode} in ${duration}ms`;
+      if (capturedJsonResponse) {
+        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+      }
+      if (logLine.length > 80) {
+        logLine = logLine.slice(0, 79) + "\u2026";
+      }
+      log(logLine);
+    }
+  });
+  next();
+});
+(async () => {
+  const server = await registerRoutes(app);
+  app.use((err, _req, res, _next) => {
+    const status = err.status || err.statusCode || 500;
+    const message = err.message || "Internal Server Error";
+    res.status(status).json({ message });
+    throw err;
+  });
+  if (app.get("env") === "development") {
+    await setupVite(app, server);
+  } else {
+    serveStatic(app);
+  }
+  const port = 5e3;
+  server.listen({
+    port,
+    host: "0.0.0.0",
+    reusePort: true
+  }, () => {
+    log(`serving on port ${port}`);
+  });
+})();

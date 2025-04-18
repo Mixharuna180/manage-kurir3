@@ -340,9 +340,9 @@ export class DatabaseStorage implements IStorage {
   sessionStore: session.SessionStore;
 
   constructor() {
-    this.sessionStore = new PostgresSessionStore({
-      pool,
-      createTableIfMissing: true,
+    // Gunakan MemoryStore untuk menghindari masalah dengan PostgreSQL session store
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000 // 24 jam
     });
     
     // Create initial warehouses if they don't exist
