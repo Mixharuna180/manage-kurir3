@@ -7,10 +7,8 @@ import crypto from "crypto";
 import { createHash } from "crypto";
 
 // Mendapatkan konfigurasi API Midtrans
-const MIDTRANS_SERVER_KEY =
-  process.env.MIDTRANS_SERVER_KEY || "Mid-server-EOC-6ehtF8gBTux1n6SaVp3H";
-const MIDTRANS_CLIENT_KEY =
-  process.env.MIDTRANS_CLIENT_KEY || "Mid-client-ajysHU-3bFyOUAc7";
+const MIDTRANS_SERVER_KEY = process.env.MIDTRANS_SERVER_KEY || "your_midtrans_server_key";
+const MIDTRANS_CLIENT_KEY = process.env.MIDTRANS_CLIENT_KEY || "your_midtrans_client_key";
 
 // Cek apakah key tersedia
 if (!MIDTRANS_SERVER_KEY || !MIDTRANS_CLIENT_KEY) {

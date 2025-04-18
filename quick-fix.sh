@@ -98,8 +98,8 @@ if [ ! -f ".env" ]; then
 DATABASE_URL=postgresql://logitech:Anam490468@localhost:5432/logitech_db
 
 # Midtrans
-MIDTRANS_SERVER_KEY=Mid-server-EOC-6ehtF8gBTux1n6SaVp3H
-MIDTRANS_CLIENT_KEY=Mid-client-ajysHU-3bFyOUAc7
+MIDTRANS_SERVER_KEY=your_midtrans_server_key_here
+MIDTRANS_CLIENT_KEY=your_midtrans_client_key_here
 
 # Session
 SESSION_SECRET=Anam490468
