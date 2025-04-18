@@ -122,7 +122,7 @@ else
 fi
 
 # 7. Setup Application Directory
-APP_DIR="/var/www/logitech"
+APP_DIR="/var/www/logis"
 log "Menyiapkan direktori aplikasi di $APP_DIR..."
 mkdir -p $APP_DIR
 cd $APP_DIR || error "Gagal mengakses direktori aplikasi"
