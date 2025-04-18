@@ -5,6 +5,8 @@ import pg from 'pg';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { createServer } from 'http';
+import crypto from 'crypto';
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -32,9 +34,53 @@ pool.query('SELECT NOW()', (err, res) => {
   }
 });
 
+// Helper functions for password hashing
+async function comparePasswords(supplied, stored) {
+  try {
+    const [hashed, salt] = stored.split('.');
+    const hashedBuf = Buffer.from(hashed, 'hex');
+    const derivedKey = crypto.scryptSync(supplied, salt, 64);
+    return crypto.timingSafeEqual(hashedBuf, derivedKey);
+  } catch (error) {
+    console.error('Error comparing passwords:', error);
+    return false;
+  }
+}
+
+// Membuat session handling sederhana dengan memory store
+const sessions = {};
+const SESSION_EXPIRY = 24 * 60 * 60 * 1000; // 24 jam
+
+function generateSessionId() {
+  return crypto.randomBytes(32).toString('hex');
+}
+
+// Middleware untuk session
+function sessionMiddleware(req, res, next) {
+  const sessionId = req.headers.authorization?.replace('Bearer ', '') || 
+                    req.cookies?.sessionId;
+  
+  if (sessionId && sessions[sessionId] && sessions[sessionId].expires > Date.now()) {
+    req.user = sessions[sessionId].user;
+    req.sessionId = sessionId;
+  }
+  
+  next();
+}
+
+// Middleware untuk memerlukan otentikasi
+function requireAuth(req, res, next) {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  next();
+}
+
 // Middleware
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'dist', 'client')));
+app.use(sessionMiddleware);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -64,6 +110,197 @@ app.get('/api/dbtest', async (req, res) => {
       message: 'Database connection failed',
       error: err.message
     });
+  }
+});
+
+// Users API
+app.get('/api/users', async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT id, username, email, full_name, phone_number, user_type, created_at FROM users');
+    res.json(rows);
+  } catch (err) {
+    console.error('Error fetching users:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/users/:id', async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT id, username, email, full_name, phone_number, user_type, created_at FROM users WHERE id = $1', [req.params.id]);
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    res.json(rows[0]);
+  } catch (err) {
+    console.error('Error fetching user:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Products API
+app.get('/api/products', async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM products');
+    res.json(rows);
+  } catch (err) {
+    console.error('Error fetching products:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/products/:id', async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM products WHERE id = $1', [req.params.id]);
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+    res.json(rows[0]);
+  } catch (err) {
+    console.error('Error fetching product:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Orders API
+app.get('/api/orders', async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM orders');
+    res.json(rows);
+  } catch (err) {
+    console.error('Error fetching orders:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/orders/:id', async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM orders WHERE id = $1', [req.params.id]);
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    res.json(rows[0]);
+  } catch (err) {
+    console.error('Error fetching order:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// User orders
+app.get('/api/orders/user/:userId', async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM orders WHERE user_id = $1', [req.params.userId]);
+    res.json(rows);
+  } catch (err) {
+    console.error('Error fetching user orders:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Warehouses API
+app.get('/api/warehouses', async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM warehouses');
+    res.json(rows);
+  } catch (err) {
+    console.error('Error fetching warehouses:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Driver assignments API
+app.get('/api/drivers/available', async (req, res) => {
+  try {
+    const { rows } = await pool.query("SELECT id, username, email, full_name, phone_number, service_area FROM users WHERE user_type = 'driver'");
+    res.json(rows);
+  } catch (err) {
+    console.error('Error fetching available drivers:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Tracking events API
+app.get('/api/tracking/:orderId', async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM tracking_events WHERE order_id = $1 ORDER BY created_at ASC', [req.params.orderId]);
+    res.json(rows);
+  } catch (err) {
+    console.error('Error fetching tracking events:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Auth routes
+app.post('/api/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Username and password are required' });
+    }
+    
+    const { rows } = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
+    
+    if (rows.length === 0) {
+      return res.status(401).json({ error: 'Invalid username or password' });
+    }
+    
+    const user = rows[0];
+    const passwordMatch = await comparePasswords(password, user.password);
+    
+    if (!passwordMatch) {
+      return res.status(401).json({ error: 'Invalid username or password' });
+    }
+    
+    // Create session
+    const sessionId = generateSessionId();
+    const { password: _password, ...userWithoutPassword } = user;
+    
+    sessions[sessionId] = {
+      user: userWithoutPassword,
+      expires: Date.now() + SESSION_EXPIRY
+    };
+    
+    console.log('Login successful for user:', userWithoutPassword);
+    
+    res.json({
+      message: 'Login successful',
+      sessionId,
+      user: userWithoutPassword
+    });
+  } catch (err) {
+    console.error('Login error:', err);
+    res.status(500).json({ error: 'Internal server error during login' });
+  }
+});
+
+app.post('/api/logout', (req, res) => {
+  const sessionId = req.sessionId;
+  
+  if (sessionId && sessions[sessionId]) {
+    delete sessions[sessionId];
+    res.json({ message: 'Logout successful' });
+  } else {
+    res.status(401).json({ error: 'Not logged in' });
+  }
+});
+
+app.get('/api/user', (req, res) => {
+  if (req.user) {
+    res.json(req.user);
+  } else {
+    res.status(401).json({ error: 'Not authenticated' });
+  }
+});
+
+// Contoh endpoint yang memerlukan autentikasi
+app.get('/api/orders/user', requireAuth, async (req, res) => {
+  try {
+    console.log('Getting orders for user ID:', req.user.id);
+    const { rows } = await pool.query('SELECT * FROM orders WHERE user_id = $1', [req.user.id]);
+    res.json(rows);
+  } catch (err) {
+    console.error('Error fetching user orders:', err);
+    res.status(500).json({ error: err.message });
   }
 });
 
