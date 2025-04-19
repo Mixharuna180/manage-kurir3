@@ -67,4 +67,4 @@ echo -e "${YELLOW}Silakan akses http://localhost:5000 atau http://SERVER_IP:5000
 echo -e "${BLUE}----------------------------------------${NC}"
 
 # Mencoba menjalankan server
-node server-simple.js
+node ${SERVER_FILE}
