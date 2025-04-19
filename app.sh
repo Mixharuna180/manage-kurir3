@@ -323,11 +323,11 @@ start_application() {
   cd /var/www/logitech || error "Gagal mengakses direktori aplikasi"
   
   log "Membuat konfigurasi PM2..."
-  cat > ecosystem.config.js << 'EOF'
+  cat > ecosystem-fix.config.js << 'EOF'
 module.exports = {
   apps: [{
     name: 'logitech',
-    script: 'server-simple-fix.js',
+    script: 'server-simple-fix-commonjs.js',
     instances: 1,
     autorestart: true,
     watch: false,
@@ -342,8 +342,21 @@ EOF
   
   success "Konfigurasi PM2 berhasil dibuat"
   
+  log "Mengkonversi server-simple-fix.js ke CommonJS..."
+  chmod +x fix-pm2.sh > /dev/null 2>&1 || warn "Gagal membuat fix-pm2.sh executable"
+  ./fix-pm2.sh > /dev/null 2>&1 || warn "Gagal menjalankan fix-pm2.sh, mencoba dengan cara lain"
+  
+  # Jika fix-pm2.sh gagal, coba langsung dengan PM2
   log "Memulai aplikasi dengan PM2..."
-  pm2 start ecosystem.config.js > /dev/null 2>&1 || error "Gagal menjalankan aplikasi dengan PM2"
+  pm2 start ecosystem-fix.config.js > /dev/null 2>&1 || {
+    warn "Gagal menjalankan aplikasi dengan ecosystem-fix.config.js, mencoba metode alternatif"
+    pm2 delete logitech > /dev/null 2>&1 || true
+    pm2 start server-simple-fix-commonjs.js --name "logitech" > /dev/null 2>&1 || {
+      error "Gagal menjalankan aplikasi dengan PM2"
+      exit 1
+    }
+  }
+  
   pm2 save > /dev/null 2>&1 || warn "Gagal menyimpan konfigurasi PM2"
   pm2 startup > /dev/null 2>&1 || warn "Gagal setup startup PM2"
   
