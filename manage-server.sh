@@ -164,7 +164,7 @@ check_status() {
     warn "File PID tidak ditemukan"
     
     # Cari proses server jika ada
-    PID=$(ps aux | grep '[n]ode.*server-commonjs' | awk '{print $2}')
+    PID=$(ps aux | grep '[n]ode.*server-node12.cjs' | awk '{print $2}')
     if [ ! -z "$PID" ]; then
       warn "Server berjalan tanpa file PID dengan PID: $PID"
       echo $PID > server.pid
