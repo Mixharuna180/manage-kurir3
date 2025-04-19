@@ -363,13 +363,14 @@ EOF
     # Buat script daemon
     cat > start-daemon.sh << 'EOF'
 #!/bin/bash
+cd "$PWD"
 nohup node server-simple.js > server.log 2>&1 &
 echo $! > server.pid
 echo "Server dimulai dengan PID $(cat server.pid)"
 EOF
     
     chmod +x start-daemon.sh > /dev/null 2>&1
-    ./start-daemon.sh > /dev/null 2>&1
+    ./start-daemon.sh
     
     if [ $? -eq 0 ]; then
       success "Server berhasil dijalankan sebagai daemon"
