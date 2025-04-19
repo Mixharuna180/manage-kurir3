@@ -53,8 +53,12 @@ function generateSessionId() {
 
 // Middleware untuk session
 function sessionMiddleware(req, res, next) {
-  const sessionId = req.headers.authorization?.replace('Bearer ', '') || 
-                  req.cookies?.sessionId;
+  let sessionId = null;
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+    sessionId = req.headers.authorization.replace('Bearer ', '');
+  } else if (req.cookies && req.cookies.sessionId) {
+    sessionId = req.cookies.sessionId;
+  }
   
   if (sessionId && sessions[sessionId] && sessions[sessionId].expires > Date.now()) {
     req.user = sessions[sessionId].user;
