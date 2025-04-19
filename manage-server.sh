@@ -43,14 +43,14 @@ start_server() {
   fi
   
   # Periksa apakah file server ada
-  if [ ! -f "server-commonjs.js" ]; then
-    error "File server-commonjs.js tidak ditemukan!"
+  if [ ! -f "server-node12.cjs" ]; then
+    error "File server-node12.cjs tidak ditemukan!"
     return 1
   fi
   
   # Mulai server
   log "Menjalankan server sebagai daemon..."
-  nohup node server-commonjs.js > server.log 2>&1 &
+  nohup node server-node12.cjs > server.log 2>&1 &
   PID=$!
   echo $PID > server.pid
   
@@ -74,7 +74,7 @@ stop_server() {
   if [ ! -f "server.pid" ]; then
     warn "File PID tidak ditemukan, server mungkin tidak berjalan"
     # Cari proses server jika ada
-    PID=$(ps aux | grep '[n]ode.*server-commonjs' | awk '{print $2}')
+    PID=$(ps aux | grep '[n]ode.*server-node12.cjs' | awk '{print $2}')
     if [ -z "$PID" ]; then
       warn "Tidak ada proses server yang berjalan"
       return 0
@@ -148,7 +148,7 @@ check_status() {
       warn "PID $PID tidak lagi berjalan, server mungkin crash"
       
       # Cari proses server jika ada
-      NEW_PID=$(ps aux | grep '[n]ode.*server-commonjs' | awk '{print $2}')
+      NEW_PID=$(ps aux | grep '[n]ode.*server-node12.cjs' | awk '{print $2}')
       if [ ! -z "$NEW_PID" ]; then
         warn "Server berjalan dengan PID berbeda: $NEW_PID"
         echo $NEW_PID > server.pid
