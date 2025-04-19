@@ -19,7 +19,19 @@ if ! command -v node &> /dev/null; then
 fi
 
 # Check apakah file server ada
-if [ ! -f "server-simple.js" ]; then
+if [ -f "server-compatible.js" ]; then
+  echo -e "${GREEN}Menggunakan server-compatible.js (Direkomendasikan)${NC}"
+  SERVER_FILE="server-compatible.js"
+  
+  # Check cookie-parser
+  if ! node -e "try{require('cookie-parser');console.log('ok')} catch(e){process.exit(1)}" &> /dev/null; then
+    echo -e "${YELLOW}Menginstall cookie-parser...${NC}"
+    npm install cookie-parser --save
+  fi
+elif [ -f "server-simple.js" ]; then
+  echo -e "${YELLOW}Menggunakan server-simple.js${NC}"
+  SERVER_FILE="server-simple.js"
+else
   echo -e "${YELLOW}server-simple.js tidak ditemukan, mencoba download dari GitHub...${NC}"
   curl -s https://raw.githubusercontent.com/Mixharuna180/manage-kurir3/main/server-simple.js > server-simple.js
   if [ $? -ne 0 ]; then
@@ -27,6 +39,7 @@ if [ ! -f "server-simple.js" ]; then
     exit 1
   else
     echo -e "${GREEN}Berhasil mendownload server-simple.js${NC}"
+    SERVER_FILE="server-simple.js"
   fi
 fi
 

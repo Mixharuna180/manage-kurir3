@@ -360,11 +360,15 @@ EOF
   if ! pm2 list | grep -q "logitech" > /dev/null 2>&1; then
     log "Metode 2: Menggunakan script bash sederhana..."
     
-    # Buat script daemon
+    # Install cookie-parser jika diperlukan
+    log "Menginstal cookie-parser untuk server kompatibel..."
+    npm install cookie-parser --save > /dev/null 2>&1 || warn "Gagal menginstal cookie-parser. Akan tetap melanjutkan."
+    
+    # Buat script daemon dengan server kompatibel
     cat > start-daemon.sh << 'EOF'
 #!/bin/bash
 cd "$PWD"
-nohup node server-simple.js > server.log 2>&1 &
+nohup node server-compatible.js > server.log 2>&1 &
 echo $! > server.pid
 echo "Server dimulai dengan PID $(cat server.pid)"
 EOF
@@ -389,7 +393,7 @@ After=network.target
 Type=simple
 User=root
 WorkingDirectory=$APP_DIR
-ExecStart=/usr/bin/node $APP_DIR/server-simple.js
+ExecStart=/usr/bin/node $APP_DIR/server-compatible.js
 Restart=on-failure
 Environment="PORT=5000"
 Environment="NODE_ENV=production"
