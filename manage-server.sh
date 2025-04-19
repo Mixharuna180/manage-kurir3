@@ -43,14 +43,14 @@ start_server() {
   fi
   
   # Periksa apakah file server ada
-  if [ ! -f "server-simple.js" ]; then
-    error "File server-simple.js tidak ditemukan!"
+  if [ ! -f "server-commonjs.js" ]; then
+    error "File server-commonjs.js tidak ditemukan!"
     return 1
   fi
   
   # Mulai server
   log "Menjalankan server sebagai daemon..."
-  nohup node server-simple.js > server.log 2>&1 &
+  nohup node server-commonjs.js > server.log 2>&1 &
   PID=$!
   echo $PID > server.pid
   
@@ -74,7 +74,7 @@ stop_server() {
   if [ ! -f "server.pid" ]; then
     warn "File PID tidak ditemukan, server mungkin tidak berjalan"
     # Cari proses server jika ada
-    PID=$(ps aux | grep '[n]ode.*server-simple' | awk '{print $2}')
+    PID=$(ps aux | grep '[n]ode.*server-commonjs' | awk '{print $2}')
     if [ -z "$PID" ]; then
       warn "Tidak ada proses server yang berjalan"
       return 0
@@ -148,7 +148,7 @@ check_status() {
       warn "PID $PID tidak lagi berjalan, server mungkin crash"
       
       # Cari proses server jika ada
-      NEW_PID=$(ps aux | grep '[n]ode.*server-simple' | awk '{print $2}')
+      NEW_PID=$(ps aux | grep '[n]ode.*server-commonjs' | awk '{print $2}')
       if [ ! -z "$NEW_PID" ]; then
         warn "Server berjalan dengan PID berbeda: $NEW_PID"
         echo $NEW_PID > server.pid
@@ -164,7 +164,7 @@ check_status() {
     warn "File PID tidak ditemukan"
     
     # Cari proses server jika ada
-    PID=$(ps aux | grep '[n]ode.*server-simple' | awk '{print $2}')
+    PID=$(ps aux | grep '[n]ode.*server-commonjs' | awk '{print $2}')
     if [ ! -z "$PID" ]; then
       warn "Server berjalan tanpa file PID dengan PID: $PID"
       echo $PID > server.pid
