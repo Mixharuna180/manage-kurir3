@@ -1,0 +1,57 @@
+ahap 5: Menyiapkan Aplikasi LogiTech
+==============================================
+[INFO] Menyiapkan direktori aplikasi di /var/www/logitech...
+[INFO] Mendownload aplikasi dari GitHub...
+[SUCCESS] Repository berhasil di-clone
+[INFO] Menginstall dependensi aplikasi...
+[SUCCESS] Dependensi aplikasi berhasil diinstall
+[INFO] Mengkonfigurasi environment variables...
+[SUCCESS] File konfigurasi .env berhasil dibuat
+
+[██████████████████████████████████████████████████] 100%
+
+Tahap 6: Menjalankan Aplikasi
+==============================================
+[INFO] Mencoba beberapa metode untuk menjalankan server...
+[WARNING] PM2 tidak ditemukan. Melewati metode PM2...
+./app.sh: line 360: pm2: command not found
+[INFO] Metode 2: Menggunakan script bash sederhana...
+[INFO] Menginstal cookie-parser untuk server kompatibel...
+Server dimulai dengan PID 25137
+[SUCCESS] Server berhasil dijalankan sebagai daemon
+[SUCCESS] Aplikasi berhasil dijalankan dengan PM2
+
+[██████████████████████████████████████████████████] 100%
+
+Tahap 7: Mengkonfigurasi Firewall
+==============================================
+[WARNING] UFW tidak terinstall. Melewati konfigurasi firewall.
+
+[██████████████████████████████████████████████████] 100%
+
+╔════════════════════════════════════════════════════════════╗
+║             INSTALASI BERHASIL DISELESAIKAN!              ║
+╚════════════════════════════════════════════════════════════╝
+
+Informasi Aplikasi:
+ - URL Aplikasi: http://localhost atau http://SERVER_IP
+ - Status Aplikasi: Aktif
+ - Direktori Aplikasi: /var/www/logitech
+ - Log Aplikasi: pm2 logs logitech
+
+Kredensial Default:
+ - Admin Username: anam
+ - Admin Password: Anam490468
+ - Driver Username: driver1
+ - Driver Password: Driver123
+
+Perintah Berguna:
+ - Restart aplikasi: pm2 restart logitech
+ - Lihat log: pm2 logs logitech
+ - Status aplikasi: pm2 status
+ - Update aplikasi: cd /var/www/logitech && git pull
+
+CATATAN PENTING: Segera ubah semua password default setelah login!
+Instalasi selesai. Terima kasih telah menggunakan LogiTech Delivery System.
+root@singapure:~/manage-kurir3# ^C
+root@singapure:~/manage-kurir3# 

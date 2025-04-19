@@ -1,0 +1,51 @@
+oot@singapure:~/manage-kurir3# ./check-server.sh
+=== LogiTech Server Status Check ===
+
+Memeriksa proses Node.js:
+Tidak ada proses server-simple.js yang berjalan
+
+Memeriksa file server.pid:
+File server.pid tidak ditemukan
+
+Memeriksa systemd service:
+Service logitech tidak ditemukan atau tidak berjalan
+
+Memeriksa port 5000:
+./check-server.sh: line 43: netstat: command not found
+Tidak ada proses yang mendengarkan port 5000
+
+Memeriksa status Nginx:
+● nginx.service - A high performance web server and a reverse proxy server
+     Loaded: loaded (/lib/systemd/system/nginx.service; enabled; vendor preset: enabled)
+     Active: active (running) since Sat 2025-04-19 03:45:10 UTC; 37min ago
+       Docs: man:nginx(8)
+    Process: 14447 ExecStartPre=/usr/sbin/nginx -t -q -g daemon on; master_process on; (code=exited, status=0/SUCCESS)
+    Process: 14448 ExecStart=/usr/sbin/nginx -g daemon on; master_process on; (code=exited, status=0/SUCCESS)
+    Process: 24673 ExecReload=/usr/sbin/nginx -g daemon on; master_process on; -s reload (code=exited, status=0/SUCCESS)
+   Main PID: 14538 (nginx)
+      Tasks: 5 (limit: 19180)
+     Memory: 5.1M
+        CPU: 293ms
+     CGroup: /system.slice/nginx.service
+             ├─14538 "nginx: master process /usr/sbin/nginx -g daemon on; master_process on;"
+             ├─24674 "nginx: worker process" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" ""
+             ├─24675 "nginx: worker process" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" ""
+             ├─24676 "nginx: worker process" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" ""
+             └─24677 "nginx: worker process" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" ""
+
+Apr 19 03:49:34 singapure systemd[1]: Reloading A high performance web server and a reverse proxy server...
+Apr 19 03:49:34 singapure systemd[1]: Reloaded A high performance web server and a reverse proxy server.
+Apr 19 03:58:52 singapure systemd[1]: Reloading A high performance web server and a reverse proxy server...
+Apr 19 03:58:52 singapure systemd[1]: Reloaded A high performance web server and a reverse proxy server.
+Apr 19 04:04:15 singapure systemd[1]: Reloading A high performance web server and a reverse proxy server...
+Apr 19 04:04:15 singapure systemd[1]: Reloaded A high performance web server and a reverse proxy server.
+Apr 19 04:12:21 singapure systemd[1]: Reloading A high performance web server and a reverse proxy server...
+Apr 19 04:12:21 singapure systemd[1]: Reloaded A high performance web server and a reverse proxy server.
+Apr 19 04:21:13 singapure systemd[1]: Reloading A high performance web server and a reverse proxy server...
+Apr 19 04:21:13 singapure systemd[1]: Reloaded A high performance web server and a reverse proxy server.
+
+Mencoba mengakses server:
+Tidak dapat mengakses server di http://localhost:5000
+
+=== Selesai ===
+root@singapure:~/manage-kurir3# 

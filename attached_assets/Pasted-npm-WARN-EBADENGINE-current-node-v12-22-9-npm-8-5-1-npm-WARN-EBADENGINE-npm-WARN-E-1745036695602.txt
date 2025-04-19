@@ -1,0 +1,52 @@
+npm WARN EBADENGINE   current: { node: 'v12.22.9', npm: '8.5.1' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: 'signal-exit@4.1.0',
+npm WARN EBADENGINE   required: { node: '>=14' },
+npm WARN EBADENGINE   current: { node: 'v12.22.9', npm: '8.5.1' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: 'rollup@4.40.0',
+npm WARN EBADENGINE   required: { node: '>=18.0.0', npm: '>=8.0.0' },
+npm WARN EBADENGINE   current: { node: 'v12.22.9', npm: '8.5.1' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: 'isexe@3.1.1',
+npm WARN EBADENGINE   required: { node: '>=16' },
+npm WARN EBADENGINE   current: { node: 'v12.22.9', npm: '8.5.1' }
+npm WARN EBADENGINE }
+npm WARN deprecated @esbuild-kit/esm-loader@2.6.5: Merged into tsx: https://tsx.is
+npm WARN deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.is
+
+added 492 packages, and audited 493 packages in 1m
+
+66 packages are looking for funding
+  run `npm fund` for details
+
+7 vulnerabilities (5 moderate, 2 high)
+
+To address all issues possible (including breaking changes), run:
+  npm audit fix --force
+
+Some issues need review, and may require choosing
+a different dependency.
+
+Run `npm audit` for details.
+Berhasil menginstall dependensi
+DATABASE_URL tidak diatur, gunakan nilai default
+Memulai server legacy...
+Server akan berjalan di port 5000
+Silakan akses http://localhost:5000 atau http://SERVER_IP:5000
+----------------------------------------
+Gagal memulai server!
+Log server:
+file:///root/manage-kurir3/server-legacy.js:2
+const express = require('express');
+                ^
+
+ReferenceError: require is not defined
+    at file:///root/manage-kurir3/server-legacy.js:2:17
+    at ModuleJob.run (internal/modules/esm/module_job.js:145:37)
+    at async Loader.import (internal/modules/esm/loader.js:182:24)
+    at async Object.loadESM (internal/process/esm_loader.js:68:5)
+root@singapure:~/manage-kurir3# 
