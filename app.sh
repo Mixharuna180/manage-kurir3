@@ -364,11 +364,11 @@ EOF
     log "Menginstal cookie-parser untuk server kompatibel..."
     npm install cookie-parser --save > /dev/null 2>&1 || warn "Gagal menginstal cookie-parser. Akan tetap melanjutkan."
     
-    # Buat script daemon dengan server kompatibel
+    # Buat script daemon dengan server legacy untuk kompatibilitas maksimum
     cat > start-daemon.sh << 'EOF'
 #!/bin/bash
 cd "$PWD"
-nohup node server-compatible.js > server.log 2>&1 &
+nohup node server-legacy.js > server.log 2>&1 &
 echo $! > server.pid
 echo "Server dimulai dengan PID $(cat server.pid)"
 EOF
@@ -393,7 +393,7 @@ After=network.target
 Type=simple
 User=root
 WorkingDirectory=$APP_DIR
-ExecStart=/usr/bin/node $APP_DIR/server-compatible.js
+ExecStart=/usr/bin/node $APP_DIR/server-legacy.js
 Restart=on-failure
 Environment="PORT=5000"
 Environment="NODE_ENV=production"
