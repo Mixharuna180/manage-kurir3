@@ -322,12 +322,16 @@ start_application() {
   
   cd /var/www/logitech || error "Gagal mengakses direktori aplikasi"
   
-  log "Membuat konfigurasi PM2..."
-  cat > ecosystem-fix.config.js << 'EOF'
+  log "Mencoba beberapa metode untuk menjalankan server..."
+  
+  # Metode 1: Menggunakan PM2 dan ecosystem config
+  if command -v pm2 &> /dev/null; then
+    log "Metode 1: Menggunakan PM2..."
+    cat > ecosystem-fix.config.js << 'EOF'
 module.exports = {
   apps: [{
     name: 'logitech',
-    script: 'server-simple-fix-commonjs.js',
+    script: 'server-simple.js',
     instances: 1,
     autorestart: true,
     watch: false,
@@ -339,26 +343,74 @@ module.exports = {
   }]
 };
 EOF
+    
+    pm2 start ecosystem-fix.config.js > /dev/null 2>&1
+    if [ $? -eq 0 ]; then
+      success "Server berhasil dijalankan dengan PM2"
+      pm2 save > /dev/null 2>&1 || warn "Gagal menyimpan konfigurasi PM2"
+      pm2 startup > /dev/null 2>&1 || warn "Gagal setup startup PM2"
+    else
+      warn "Gagal menjalankan server dengan PM2, mencoba metode lain..."
+    fi
+  else
+    warn "PM2 tidak ditemukan. Melewati metode PM2..."
+  fi
   
-  success "Konfigurasi PM2 berhasil dibuat"
-  
-  log "Mengkonversi server-simple-fix.js ke CommonJS..."
-  chmod +x fix-pm2.sh > /dev/null 2>&1 || warn "Gagal membuat fix-pm2.sh executable"
-  ./fix-pm2.sh > /dev/null 2>&1 || warn "Gagal menjalankan fix-pm2.sh, mencoba dengan cara lain"
-  
-  # Jika fix-pm2.sh gagal, coba langsung dengan PM2
-  log "Memulai aplikasi dengan PM2..."
-  pm2 start ecosystem-fix.config.js > /dev/null 2>&1 || {
-    warn "Gagal menjalankan aplikasi dengan ecosystem-fix.config.js, mencoba metode alternatif"
-    pm2 delete logitech > /dev/null 2>&1 || true
-    pm2 start server-simple-fix-commonjs.js --name "logitech" > /dev/null 2>&1 || {
-      error "Gagal menjalankan aplikasi dengan PM2"
-      exit 1
-    }
-  }
-  
-  pm2 save > /dev/null 2>&1 || warn "Gagal menyimpan konfigurasi PM2"
-  pm2 startup > /dev/null 2>&1 || warn "Gagal setup startup PM2"
+  # Jika server belum berjalan, coba metode 2: Menggunakan Node.js langsung
+  if ! pm2 list | grep -q "logitech" > /dev/null 2>&1; then
+    log "Metode 2: Menggunakan script bash sederhana..."
+    
+    # Buat script daemon
+    cat > start-daemon.sh << 'EOF'
+#!/bin/bash
+nohup node server-simple.js > server.log 2>&1 &
+echo $! > server.pid
+echo "Server dimulai dengan PID $(cat server.pid)"
+EOF
+    
+    chmod +x start-daemon.sh > /dev/null 2>&1
+    ./start-daemon.sh > /dev/null 2>&1
+    
+    if [ $? -eq 0 ]; then
+      success "Server berhasil dijalankan sebagai daemon"
+    else
+      warn "Gagal menjalankan server sebagai daemon, mencoba metode terakhir..."
+      
+      # Metode 3: Menggunakan systemd service
+      log "Metode 3: Menggunakan systemd service..."
+      
+      cat > /etc/systemd/system/logitech.service << EOF
+[Unit]
+Description=LogiTech Delivery System
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=$APP_DIR
+ExecStart=/usr/bin/node $APP_DIR/server-simple.js
+Restart=on-failure
+Environment="PORT=5000"
+Environment="NODE_ENV=production"
+Environment="DATABASE_URL=${DATABASE_URL:-postgresql://logitech:Anam490468@localhost:5432/logitech_db}"
+
+[Install]
+WantedBy=multi-user.target
+EOF
+      
+      systemctl daemon-reload > /dev/null 2>&1
+      systemctl enable logitech > /dev/null 2>&1
+      systemctl start logitech > /dev/null 2>&1
+      
+      if [ $? -eq 0 ]; then
+        success "Server berhasil dijalankan sebagai systemd service"
+      else
+        error "Semua metode gagal menjalankan server!"
+        log "Gunakan run-server.sh untuk menjalankan server secara manual"
+        exit 1
+      fi
+    fi
+  fi
   
   success "Aplikasi berhasil dijalankan dengan PM2"
   
